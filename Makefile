@@ -8,6 +8,7 @@ TOOLS := landing-zone aws-cli golang
 TOOLS := $(TOOLS) clean
 TMP := /tmp/landing-zone
 
+
 all: $(TOOLS)
 
 landing-zone:
@@ -30,9 +31,10 @@ aws-cli:
 	fi
 
 golang:
+	source functions
 	$(eval GOROOT=/usr/local/go)
 	$(eval GOPATH=$${HOME}/go)
-	$(eval GPATH=$(GOROOT)/bin:$${PATH})
+	$(eval GPATH=`echo -e '\044PATH:$(GOROOT)/bin'`)
 	LATEST_VERSION=`curl -sL https://golang.org/VERSION?m=text`
 	CURRENT_VERSION=$$(go version 2>/dev/null | awk '{print $$3}')
 	if [[ "$$LATEST_VERSION" != "$$CURRENT_VERSION" ]]; then
@@ -42,9 +44,10 @@ golang:
 		echo "$$INSTALL_MSG" \
 		&& sudo rm -rf /usr/local/go && cd $$TMP && curl -sL "https://go.dev/dl/$$LATEST_VERSION.linux-amd64.tar.gz" -o $$.tar.gz && sudo tar -C /usr/local -xzf $$.tar.gz >/dev/null \
 		&& rm -rf $$TMP && echo $$INSTALL_MSG - done \
-		&& $(call update-bashrc,export GOROOT,$(GOROOT)) \
-		&& $(call update-bashrc,export GOPATH,$(GOPATH)) \
-		&& $(call update-bashrc,export PATH,$(GPATH))
+		&& lineinfile '^export GOROOT\s*=\s*' "export GOROOT=$(GOROOT)" ~/.bashrc \
+		&& lineinfile '^export GOPATH\s*=\s*' "export GOPATH=$(GOPATH)" ~/.bashrc \
+		&& lineinfile '^export PATH\s*=\s*' "export PATH=$(GPATH)" ~/.bashrc
+		echo "Reload the bash terminal or run \`source ~/.bashrc\` to update the environment variables"
 	fi
 
 clean:
@@ -55,15 +58,9 @@ clean:
 	sudo rm -rf /tmp/*
 	sudo rm -rf /var/tmp/*
 	rm -rf $(TMP)
-	echo "Reload the bash terminal or run \`source ~/.bashrc\` to update the environment variables"
 
 define create-tmp
   mkdir -p $(TMP)/$(1)
-endef
-
-define update-bashrc
-	echo "$(1)=$(2)"
-	sed -i "/^$${1}=/{h;s/=.*/=$${2}/};${x;/^$/{s//$${1}=$${2}/;H};x}" ~/.bashrc
 endef
 
 define landing-zone
