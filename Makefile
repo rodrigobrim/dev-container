@@ -18,6 +18,7 @@ landing-zone:
 	fi
 
 aws-cli:
+	source functions
 	INSTALL_MSG="Installing aws-cli"
 	LATEST_VERSION=`curl -sL https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst | head -n 10 | grep '^2.'`
 	CURRENT_VERSION=$$(aws --version version 2>/dev/null | awk '{print $$1}' | cut -d'/' -f2)
@@ -26,8 +27,9 @@ aws-cli:
 		TMP=$(TMP)/$@
 		echo "$$INSTALL_MSG" \
 		&& cd $$TMP && curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o $$.zip && unzip -o $$.zip >/dev/null \
-		&& sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update > /dev/null && rm -rf $$TMP && echo $$INSTALL_MSG - done
-		complete -C '/usr/local/bin/aws_completer' aws
+		&& sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update > /dev/null && rm -rf $$TMP && echo $$INSTALL_MSG - done \
+		&& lineinfile '^complete.*aws' "complete -C '/usr/local/bin/aws_completer' aws" ~/.bashrc
+		echo "Reload the bash terminal or run \`source ~/.bashrc\` to update the environment variables"
 	fi
 
 golang:
